@@ -1,0 +1,11 @@
+name: geofill-address
+
+services:
+  api:
+    build: .
+    image: geofill-address-server:latest
+    restart: unless-stopped
+    environment:
+      API_TOKEN: ${API_TOKEN:-}
+    ports:
+      - ${API_BIND_ADDRESS:-127.0.0.1}:8788:8788

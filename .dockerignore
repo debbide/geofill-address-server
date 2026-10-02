@@ -1,0 +1,5 @@
+.git
+etl/checkpoints
+__pycache__
+*.pyc
+data/checkpoints
