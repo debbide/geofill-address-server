@@ -31,6 +31,7 @@ Env:
 import json
 import os
 import random
+import re
 import sqlite3
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -63,10 +64,16 @@ def connect():
     return db
 
 
+# Plausible house numbers: 1-4 digits, optional single letter or range.
+# Overture's raw `number` sometimes holds parcel ids ('10229') or unit
+# designators ('3m'); those fail this check and we generate instead.
+_NUMBER_OK = re.compile(r'^\d{1,4}[A-Za-z]?(-\d{1,4}[A-Za-z]?)?$')
+
+
 def make_house_number(country, stored_number):
-    """Use the real sampled number when available, else generate one."""
-    if stored_number:
-        return stored_number
+    """Use the real sampled number when plausible, else generate one."""
+    if stored_number and _NUMBER_OK.match(stored_number.strip()):
+        return stored_number.strip()
     style = NUMBER_STYLE.get(country, 'prefix')
     if style == 'jp':
         return f'{RANDOM.randint(1, 30)}-{RANDOM.randint(1, 20)}'
@@ -105,7 +112,10 @@ def generate(country, city):
         return None
     number = make_house_number(country, row['number'])
     street_line = format_street_line(country, number, row['street'])
-    formatted = f"{street_line}, {row['city']}, {row['admin1']} {row['postcode']}".strip()
+    tail = f"{row['admin1']} {row['postcode']}".strip()
+    formatted = f"{street_line}, {row['city']}"
+    if tail:
+        formatted = f"{formatted}, {tail}"
     return {
         'data': {
             'result': {

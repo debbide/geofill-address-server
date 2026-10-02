@@ -74,17 +74,24 @@ curl http://127.0.0.1:8788/health
 
 - 来源：[Overture Maps](https://overturemaps.org/) addresses 主题
   （开放数据，需署名；见 `data/` 及库内 `meta` 表）
-- 覆盖：19 国 × 每国 Top 10 城市 × 每城 20 条街道
-- 更新：重新运行 `etl/extract.py` 后 `--finalize` 重建 `data/addresses.db`
+- 覆盖：12 国 × 每国 Top 10 城市 × 每城 20 条街道，共 2159 条
+  （US CA MX DE FR IT ES NL HK SG AU BR）
+- IT/DE/FR 部分街道的邮编由 GeoNames 城市邮编表补齐；HK 无邮编（当地惯例）
+- Overture 无数据的国家（GB RU CN KR IN）及未纳入的 JP/TW，
+  由 GeoFill 本地地址池兜底
+- 更新：重新运行 `etl/extract3.py` 后 `--finalize` 重建 `data/addresses.db`
   并重新构建镜像
 
 本地构建数据库：
 
 ```bash
 pip install boto3 pyarrow
-python3 etl/extract.py            # 断点续跑，状态在 etl/checkpoints/
-python3 etl/extract.py --finalize # 产出 data/addresses.json + data/addresses.db
+python3 etl/extract3.py           # 断点续跑，状态在 etl/checkpoints/
+python3 etl/topupsample.py        # 补扫主扫中缺失的 Top 城市（计数精确后定向补）
+python3 etl/extract3.py --finalize # 产出 data/addresses.json + data/addresses.db
 ```
+
+注意：ETL 需要能直连 Overture Maps 的 S3（或可用的 HTTP 代理）。
 
 ## 许可
 
